@@ -6,7 +6,13 @@ import com.satyam.fintrack.dto.ExpenseResponse;
 import com.satyam.fintrack.dto.PageResponse;
 import com.satyam.fintrack.dto.UpdateExpenseRequest;
 import com.satyam.fintrack.service.ExpenseService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -20,12 +26,14 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/expenses")
 @Validated
-
+@Tag(name = "Expenses", description = "Expense CRUD APIs")
+@SecurityRequirement(name = "bearerAuth")
 public class ExpenseController {
     @Autowired
     private ExpenseService expenseService;
 
     @PostMapping
+    @Operation(summary = "Create an expense")
     public ResponseEntity<ApiResponse<Map<String, Object>>> createExpense(
             @Valid @RequestBody CreateExpenseRequest request) {
 
@@ -39,10 +47,18 @@ public class ExpenseController {
     }
 
     @GetMapping
+    @Operation(summary = "List expenses with pagination and filters")
     public ResponseEntity<ApiResponse<PageResponse<ExpenseResponse>>> getExpenses(
 
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "0")
+            @Min(0)
+            @Schema(example = "0", minimum = "0")
+            int page,
+            @RequestParam(defaultValue = "10")
+            @Min(1)
+            @Max(100)
+            @Schema(example = "10", minimum = "1", maximum = "100")
+            int size,
 
             @RequestParam(required = false) Long categoryId,
 
@@ -63,11 +79,13 @@ public class ExpenseController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Get a single expense")
     public ResponseEntity<ApiResponse<ExpenseResponse>> getExpense(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.of(HttpStatus.OK, expenseService.getExpense(id)));
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Delete an expense")
     public ResponseEntity<ApiResponse<Map<String, Object>>> deleteExpense(@PathVariable Long id) {
 
         expenseService.deleteExpense(id);
@@ -76,6 +94,7 @@ public class ExpenseController {
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Update an expense")
     public ResponseEntity<ApiResponse<ExpenseResponse>> updateExpense(
             @PathVariable Long id,
             @Valid @RequestBody UpdateExpenseRequest request

@@ -13,6 +13,7 @@ import com.satyam.fintrack.repository.CategoryRepository;
 import com.satyam.fintrack.repository.ExpenseRepository;
 import com.satyam.fintrack.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -62,6 +63,7 @@ public class ExpenseService {
                         LocalDate startDate,
                         LocalDate endDate) {
 
+                validatePagination(page, size);
                 Long userId = SecurityUtils.getAuthenticatedUserId();
 
                 Pageable pageable = PageRequest.of(
@@ -197,7 +199,16 @@ public class ExpenseService {
                         expense.setCategory(category);
                 }
 
-                Expense updated = expenseRepository.save(expense);
+                Expense updated;
+
+                try {
+                        updated = expenseRepository.saveAndFlush(expense);
+                } catch (OptimisticLockingFailureException ex) {
+                        throw new OptimisticLockingFailureException(
+                                "Resource was updated by another request. Please retry.",
+                                ex
+                        );
+                }
 
                 return new ExpenseResponse(
                                 updated.getId(),
@@ -206,5 +217,15 @@ public class ExpenseService {
                                 updated.getExpenseDate(),
                                 updated.getCategory().getId(),
                                 updated.getCategory().getName());
+        }
+
+        private void validatePagination(int page, int size) {
+                if (page < 0) {
+                        throw new IllegalArgumentException("page must be greater than or equal to 0");
+                }
+
+                if (size <= 0 || size > 100) {
+                        throw new IllegalArgumentException("size must be between 1 and 100");
+                }
         }
 }

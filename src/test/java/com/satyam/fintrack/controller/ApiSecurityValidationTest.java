@@ -6,6 +6,7 @@ import com.satyam.fintrack.Security.JwtAuthenticationFilter;
 import com.satyam.fintrack.Security.JwtService;
 import com.satyam.fintrack.config.SecurityConfig;
 import com.satyam.fintrack.controller.AnalyticsController;
+import com.satyam.fintrack.dto.ExpenseResponse;
 import com.satyam.fintrack.exceptions.GlobalExceptionHandler;
 import com.satyam.fintrack.exceptions.UserAlreadyAdminException;
 import com.satyam.fintrack.service.AnalyticsService;
@@ -27,6 +28,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.nullValue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -34,6 +38,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -158,6 +163,44 @@ class ApiSecurityValidationTest {
     }
 
     @Test
+    void createExpenseAcceptsMinimumAmount() throws Exception {
+        mockMvc.perform(post("/api/expenses")
+                        .with(user("1").roles("USER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "amount": 0.01,
+                                  "description": "minimum",
+                                  "expenseDate": "2026-03-10",
+                                  "categoryId": 1
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value(201))
+                .andExpect(jsonPath("$.data.categoryId").value(1))
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    @Test
+    void createExpenseRejectsVeryLargeAmount() throws Exception {
+        mockMvc.perform(post("/api/expenses")
+                        .with(user("1").roles("USER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "amount": 1000000000.00,
+                                  "description": "too large",
+                                  "expenseDate": "2026-03-10",
+                                  "categoryId": 1
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.messages[0]").value("amount: must be less than or equal to 999999999.99"))
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    @Test
     void accessingAnotherUsersExpenseReturnsForbiddenInsteadOfServerError() throws Exception {
         when(expenseService.getExpense(99L))
                 .thenThrow(new org.springframework.security.access.AccessDeniedException("You cannot access this expense"));
@@ -176,6 +219,30 @@ class ApiSecurityValidationTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.status").value(401))
                 .andExpect(jsonPath("$.messages[0]").value("Invalid or expired token"))
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    @Test
+    void negativePageReturnsBadRequest() throws Exception {
+        mockMvc.perform(get("/api/expenses")
+                        .with(user("1").roles("USER"))
+                        .param("page", "-1")
+                        .param("size", "10"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.messages[0]").value("getExpenses.page: must be greater than or equal to 0"))
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    @Test
+    void zeroSizeReturnsBadRequest() throws Exception {
+        mockMvc.perform(get("/api/expenses")
+                        .with(user("1").roles("USER"))
+                        .param("page", "0")
+                        .param("size", "0"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.messages[0]").value("getExpenses.size: must be greater than or equal to 1"))
                 .andExpect(jsonPath("$.timestamp").exists());
     }
 
@@ -228,6 +295,54 @@ class ApiSecurityValidationTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.messages[0]").value("User is already ADMIN"))
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    @Test
+    void concurrentExpenseUpdatesReturnSuccessThenConflict() throws Exception {
+        ExpenseResponse updatedResponse = new ExpenseResponse(
+                55L,
+                new java.math.BigDecimal("120.00"),
+                "updated",
+                java.time.LocalDate.of(2026, 3, 18),
+                1L,
+                "food"
+        );
+
+        doAnswer(invocation -> updatedResponse)
+                .doThrow(new org.springframework.orm.ObjectOptimisticLockingFailureException("Expense", 55L))
+                .when(expenseService).updateExpense(eq(55L), any());
+
+        mockMvc.perform(put("/api/expenses/55")
+                        .with(user("1").roles("USER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "amount": 120.00,
+                                  "description": "updated",
+                                  "expenseDate": "2026-03-18",
+                                  "categoryId": 1
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.id").value(55))
+                .andExpect(jsonPath("$.timestamp").exists());
+
+        mockMvc.perform(put("/api/expenses/55")
+                        .with(user("1").roles("USER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "amount": 121.00,
+                                  "description": "stale update",
+                                  "expenseDate": "2026-03-18",
+                                  "categoryId": 1
+                                }
+                                """))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.messages[0]").value("Resource was updated by another request. Please retry."))
                 .andExpect(jsonPath("$.timestamp").exists());
     }
 

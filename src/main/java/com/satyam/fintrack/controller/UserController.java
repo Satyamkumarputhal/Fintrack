@@ -7,6 +7,8 @@ import com.satyam.fintrack.dto.UserRegisterRequest;
 import com.satyam.fintrack.dto.UserRegisterResponse;
 import com.satyam.fintrack.entity.User;
 import com.satyam.fintrack.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -20,6 +22,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/user")
+@Tag(name = "Auth", description = "Authentication APIs")
 public class UserController {
 
     @Autowired
@@ -29,6 +32,7 @@ public class UserController {
     private JwtService jwtService;
 
     @PostMapping("/register")
+    @Operation(summary = "Register a new user")
     public ResponseEntity<ApiResponse<UserRegisterResponse>> registerUSer(@Valid @RequestBody UserRegisterRequest request){
         UserRegisterResponse response = userService.registerUser(request);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -36,6 +40,7 @@ public class UserController {
     }
 
     @PostMapping("/login")
+    @Operation(summary = "Authenticate and receive a JWT")
     public ResponseEntity<ApiResponse<Map<String, String>>> login(
             @Valid @RequestBody LoginRequest request) {
 

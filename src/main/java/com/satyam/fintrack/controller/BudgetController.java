@@ -4,6 +4,9 @@ import com.satyam.fintrack.dto.ApiResponse;
 import com.satyam.fintrack.dto.BudgetSummaryResponse;
 import com.satyam.fintrack.dto.CreateBudgetRequest;
 import com.satyam.fintrack.service.BudgetService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,11 +21,14 @@ import java.util.Map;
 @RequestMapping("/api/budgets")
 @RequiredArgsConstructor
 @Validated
+@Tag(name = "Budgets", description = "Budget management APIs")
+@SecurityRequirement(name = "bearerAuth")
 public class BudgetController {
 
     private final BudgetService budgetService;
 
     @PostMapping
+    @Operation(summary = "Create a budget")
     public ResponseEntity<ApiResponse<Map<String, Object>>> createBudget(
             @Valid @RequestBody CreateBudgetRequest request
     ) {
@@ -38,6 +44,7 @@ public class BudgetController {
     }
 
     @GetMapping("/summary")
+    @Operation(summary = "Get monthly budget summary")
     public ResponseEntity<ApiResponse<List<BudgetSummaryResponse>>> getBudgetSummary(
 
             @RequestParam int year,

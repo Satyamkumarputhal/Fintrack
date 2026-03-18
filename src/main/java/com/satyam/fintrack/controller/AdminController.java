@@ -2,6 +2,9 @@ package com.satyam.fintrack.controller;
 
 import com.satyam.fintrack.dto.ApiResponse;
 import com.satyam.fintrack.service.AdminService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,12 +19,15 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/admin/users")
 @RequiredArgsConstructor
+@Tag(name = "Admin", description = "Administrative APIs")
+@SecurityRequirement(name = "bearerAuth")
 public class AdminController {
 
     private final AdminService adminService;
 
     @PatchMapping("/{id}/promote")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Promote a user to ADMIN")
     public ResponseEntity<ApiResponse<Map<String, Object>>> promoteUser(@PathVariable Long id) {
         adminService.promoteUser(id);
         return ResponseEntity.ok(ApiResponse.of(

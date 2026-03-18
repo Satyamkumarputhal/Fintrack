@@ -28,6 +28,9 @@ public class Expense {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Version
+    private Long version;
+
     @DecimalMin("0.01")
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal amount;
