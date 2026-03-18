@@ -1,20 +1,27 @@
 package com.satyam.fintrack.Security;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.satyam.fintrack.exceptions.ErrorResponse;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -22,6 +29,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final ObjectMapper objectMapper;
 
     @Override
     protected void doFilterInternal(
@@ -73,17 +81,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     );
 
                     SecurityContextHolder.getContext().setAuthentication(authToken);
+                } else {
+                    throw new BadCredentialsException("Invalid authentication token");
                 }
             }
 
             filterChain.doFilter(request, response);
 
-        } catch (Exception e) {
+        } catch (JwtException | IllegalArgumentException | UsernameNotFoundException | BadCredentialsException ex) {
+            SecurityContextHolder.clearContext();
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json");
-            response.getWriter().write(
-                    "{ \"error\": \"JWT Error\", \"message\": \"" + e.getMessage() + "\" }"
-            );
+            response.getWriter().write(objectMapper.writeValueAsString(
+                    new ErrorResponse(
+                            HttpServletResponse.SC_UNAUTHORIZED,
+                            List.of("Unauthorized"),
+                            LocalDateTime.now()
+                    )
+            ));
         }
     }
 }
