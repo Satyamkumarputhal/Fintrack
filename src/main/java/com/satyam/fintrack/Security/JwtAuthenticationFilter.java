@@ -26,6 +26,7 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+    private static final String INVALID_TOKEN_MESSAGE = "Invalid or expired token";
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
@@ -95,7 +96,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             response.getWriter().write(objectMapper.writeValueAsString(
                     new ErrorResponse(
                             HttpServletResponse.SC_UNAUTHORIZED,
-                            List.of("Unauthorized"),
+                            List.of(INVALID_TOKEN_MESSAGE),
                             LocalDateTime.now()
                     )
             ));

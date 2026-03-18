@@ -74,6 +74,13 @@ public class GlobalExceptionHandler {
                 .body(buildError(HttpStatus.CONFLICT, List.of(ex.getMessage())));
     }
 
+    @ExceptionHandler(UserAlreadyAdminException.class)
+    public ResponseEntity<ErrorResponse> handleUserAlreadyAdmin(UserAlreadyAdminException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(buildError(HttpStatus.CONFLICT, List.of(ex.getMessage())));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
 
@@ -90,6 +97,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex) {
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(buildError(HttpStatus.FORBIDDEN, List.of(ex.getMessage())));
+    }
+
+    @ExceptionHandler(UnauthorizedActionException.class)
+    public ResponseEntity<ErrorResponse> handleUnauthorizedAction(UnauthorizedActionException ex) {
         return ResponseEntity
                 .status(HttpStatus.FORBIDDEN)
                 .body(buildError(HttpStatus.FORBIDDEN, List.of(ex.getMessage())));
@@ -124,6 +138,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(buildError(HttpStatus.BAD_REQUEST, List.of(ex.getMessage())));
+    }
+
+    @ExceptionHandler(InvalidOperationException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidOperation(InvalidOperationException ex) {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(buildError(HttpStatus.BAD_REQUEST, List.of(ex.getMessage())));

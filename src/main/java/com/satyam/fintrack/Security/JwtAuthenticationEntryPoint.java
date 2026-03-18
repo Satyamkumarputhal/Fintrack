@@ -18,6 +18,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
     private final ObjectMapper objectMapper;
+    private static final String INVALID_TOKEN_MESSAGE = "Invalid or expired token";
 
     @Override
     public void commence(HttpServletRequest request,
@@ -29,7 +30,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
         response.getWriter().write(objectMapper.writeValueAsString(
                 new ErrorResponse(
                         HttpServletResponse.SC_UNAUTHORIZED,
-                        List.of("Unauthorized"),
+                        List.of(INVALID_TOKEN_MESSAGE),
                         LocalDateTime.now()
                 )
         ));

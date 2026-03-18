@@ -1,6 +1,7 @@
 package com.satyam.fintrack.controller;
 
 import com.satyam.fintrack.Security.JwtService;
+import com.satyam.fintrack.dto.ApiResponse;
 import com.satyam.fintrack.dto.LoginRequest;
 import com.satyam.fintrack.dto.UserRegisterRequest;
 import com.satyam.fintrack.dto.UserRegisterResponse;
@@ -28,21 +29,20 @@ public class UserController {
     private JwtService jwtService;
 
     @PostMapping("/register")
-    public ResponseEntity<UserRegisterResponse> registerUSer(@Valid @RequestBody UserRegisterRequest request){
+    public ResponseEntity<ApiResponse<UserRegisterResponse>> registerUSer(@Valid @RequestBody UserRegisterRequest request){
         UserRegisterResponse response = userService.registerUser(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.of(HttpStatus.CREATED, response));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(
+    public ResponseEntity<ApiResponse<Map<String, String>>> login(
             @Valid @RequestBody LoginRequest request) {
 
         User user = userService.authenticate(request);
 
         String token = jwtService.generateToken(user);
 
-        return ResponseEntity.ok(Map.of(
-                "token", token
-        ));
+        return ResponseEntity.ok(ApiResponse.of(HttpStatus.OK, Map.of("token", token)));
     }
 }

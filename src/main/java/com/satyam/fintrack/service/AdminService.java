@@ -3,6 +3,7 @@ package com.satyam.fintrack.service;
 import com.satyam.fintrack.entity.User;
 import com.satyam.fintrack.entity.UserRole;
 import com.satyam.fintrack.exceptions.ResourceNotFoundException;
+import com.satyam.fintrack.exceptions.UserAlreadyAdminException;
 import com.satyam.fintrack.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
@@ -24,7 +25,7 @@ public class AdminService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         if (user.getRole() == UserRole.ADMIN) {
-            throw new IllegalStateException("User is already ADMIN");
+            throw new UserAlreadyAdminException("User is already ADMIN");
         }
 
         user.setRole(UserRole.ADMIN);
