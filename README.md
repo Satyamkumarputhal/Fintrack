@@ -155,6 +155,11 @@
 
 ![Budgets](docs/screenshots/05_budgets.png)
 
+### Analytics
+> Full analytics view — monthly spending totals, category breakdown, spending health indicator, and monthly trend chart.
+
+![Analytics](docs/screenshots/06_analytics.png)
+
 ---
 
 ## 📡 API Reference
