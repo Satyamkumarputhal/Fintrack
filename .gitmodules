@@ -1,0 +1,3 @@
+[submodule "finflow-dashboard"]
+	path = finflow-dashboard
+	url = https://github.com/Satyamkumarputhal/finflow-dashboard.git

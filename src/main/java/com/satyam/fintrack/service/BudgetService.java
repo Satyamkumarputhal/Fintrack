@@ -4,6 +4,8 @@ import com.satyam.fintrack.Security.SecurityUtils;
 import com.satyam.fintrack.dto.BudgetSummaryProjection;
 import com.satyam.fintrack.dto.BudgetSummaryResponse;
 import com.satyam.fintrack.dto.CreateBudgetRequest;
+import com.satyam.fintrack.dto.UpdateBudgetByPeriodRequest;
+import com.satyam.fintrack.dto.UpdateBudgetRequest;
 import com.satyam.fintrack.entity.Budget;
 import com.satyam.fintrack.entity.Category;
 import com.satyam.fintrack.entity.User;
@@ -67,6 +69,35 @@ public class BudgetService {
         budgetRepository.save(budget);
     }
 
+    public void updateBudget(Long budgetId, UpdateBudgetRequest request) {
+        Long userId = SecurityUtils.getAuthenticatedUserId();
+
+        Budget budget = budgetRepository.findById(budgetId)
+                .orElseThrow(() -> new ResourceNotFoundException("Budget not found"));
+
+        if (!budget.getUser().getId().equals(userId)) {
+            throw new ResourceNotFoundException("Budget not found");
+        }
+
+        budget.setAmount(request.amount());
+        budgetRepository.save(budget);
+    }
+
+    public void updateBudgetByCategoryAndPeriod(UpdateBudgetByPeriodRequest request) {
+        Long userId = SecurityUtils.getAuthenticatedUserId();
+
+        Budget budget = budgetRepository.findByUserIdAndCategoryIdAndYearAndMonth(
+                        userId,
+                        request.categoryId(),
+                        request.year(),
+                        request.month()
+                )
+                .orElseThrow(() -> new ResourceNotFoundException("Budget not found"));
+
+        budget.setAmount(request.amount());
+        budgetRepository.save(budget);
+    }
+
     public List<BudgetSummaryResponse> getBudgetSummary(int year, int month) {
 
         Long userId = SecurityUtils.getAuthenticatedUserId();
@@ -108,6 +139,8 @@ public class BudgetService {
             }
 
             return new BudgetSummaryResponse(
+                    r.getBudgetId(),
+                    r.getCategoryId(),
                     r.getCategoryName(),
                     budget,
                     spent,

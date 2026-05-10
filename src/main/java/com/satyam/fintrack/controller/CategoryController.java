@@ -35,6 +35,15 @@ public class CategoryController {
         return ResponseEntity.ok(ApiResponse.of(HttpStatus.OK, categories));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<CategoryResponse>> updateCategory(
+            @PathVariable long id,
+            @RequestBody CreateCategoryRequest request
+    ) {
+        CategoryResponse response = categoryService.updateCategory(id, request);
+        return ResponseEntity.ok(ApiResponse.of(HttpStatus.OK, response));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Map<String, Object>>> deleteCategories(@PathVariable long id){
         categoryService.deleteCategory(id);

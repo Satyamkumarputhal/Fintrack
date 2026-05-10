@@ -3,6 +3,8 @@ package com.satyam.fintrack.controller;
 import com.satyam.fintrack.dto.ApiResponse;
 import com.satyam.fintrack.dto.BudgetSummaryResponse;
 import com.satyam.fintrack.dto.CreateBudgetRequest;
+import com.satyam.fintrack.dto.UpdateBudgetByPeriodRequest;
+import com.satyam.fintrack.dto.UpdateBudgetRequest;
 import com.satyam.fintrack.service.BudgetService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -56,5 +58,34 @@ public class BudgetController {
                 HttpStatus.OK,
                 budgetService.getBudgetSummary(year, month)
         ));
+    }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Update a budget amount")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> updateBudget(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateBudgetRequest request
+    ) {
+        budgetService.updateBudget(id, request);
+
+        return ResponseEntity.ok(ApiResponse.of(HttpStatus.OK, Map.of(
+                "budgetId", id,
+                "amount", request.amount()
+        )));
+    }
+
+    @PutMapping
+    @Operation(summary = "Update a budget by category and month")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> updateBudgetByCategoryAndPeriod(
+            @Valid @RequestBody UpdateBudgetByPeriodRequest request
+    ) {
+        budgetService.updateBudgetByCategoryAndPeriod(request);
+
+        return ResponseEntity.ok(ApiResponse.of(HttpStatus.OK, Map.of(
+                "categoryId", request.categoryId(),
+                "year", request.year(),
+                "month", request.month(),
+                "amount", request.amount()
+        )));
     }
 }

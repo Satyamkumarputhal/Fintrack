@@ -36,6 +36,8 @@ public interface BudgetRepository extends JpaRepository<Budget, Long> {
 
     @Query("""
     SELECT
+        b.id as budgetId,
+        c.id as categoryId,
         c.name as categoryName,
         b.amount as budgetAmount,
         COALESCE(SUM(e.amount),0) as spentAmount
@@ -49,7 +51,7 @@ public interface BudgetRepository extends JpaRepository<Budget, Long> {
     WHERE b.user.id = :userId
     AND b.year = :year
     AND b.month = :month
-    GROUP BY c.name, b.amount
+    GROUP BY b.id, c.id, c.name, b.amount
     """)
     List<BudgetSummaryProjection> getBudgetSummary(
             Long userId,

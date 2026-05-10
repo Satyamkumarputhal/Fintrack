@@ -69,6 +69,28 @@ public class CategoryService {
                 ))
                 .toList();
     }
+
+    @Transactional
+    public CategoryResponse updateCategory(Long categoryId, CreateCategoryRequest request) {
+        Long userId = SecurityUtils.getAuthenticatedUserId();
+        String normalizedName = request.name().trim().toLowerCase();
+
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
+
+        if (!category.getUser().getId().equals(userId)) {
+            throw new ResourceNotFoundException("Category not found");
+        }
+
+        if (categoryRepository.existsByNameAndUserIdAndIdNot(normalizedName, userId, categoryId)) {
+            throw new CategoryAlreadyExistsException("Category already exists");
+        }
+
+        category.setName(normalizedName);
+        Category updatedCategory = categoryRepository.save(category);
+        return maptoResponse(updatedCategory);
+    }
+
     public void deleteCategory(Long categoryId) {
 
         Long userId = SecurityUtils.getAuthenticatedUserId();
@@ -88,7 +110,5 @@ public class CategoryService {
 
         categoryRepository.delete(category);
     }
-
-
-    }
+}
 
